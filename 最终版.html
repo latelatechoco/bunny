@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        .wrap {
+            width: 512px;
+            height: 550px;
+            background: url(./images/bg.jpg) no-repeat 0 0;
+            /* background-position: 0 -760px; */
+        }
+
+        .show {
+            width: 300px;
+            height: 500px;
+            border: 1px solid #ccc;
+            position: absolute;
+            left: 550px;
+            top: 8px;
+        
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <!-- 我方飞机 -->
+        <img id="fj" src="./images/fj.png" alt="" style="position:absolute;left:240px;top: 450px;width:50px;">
+        <!-- 炮弹 -->
+        <img id="shell0" src="./images/paodan.png" alt="" style="position: absolute;display: none;">
+        <img id="shell1" src="./images/paodan.png" alt="" style="position: absolute;display: none;">
+        <img id="shell2" src="./images/paodan.png" alt="" style="position: absolute;display: none;">
+        <img id="shell3" src="./images/paodan.png" alt="" style="position: absolute;display: none;">
+        <img id="shell4" src="./images/paodan.png" alt="" style="position: absolute;display: none;">
+        <img id="shell5" src="./images/paodan.png" alt="" style="position: absolute;display: none;">
+        <img id="shell6" src="./images/paodan.png" alt="" style="position: absolute;display: none;">
+        <img id="shell7" src="./images/paodan.png" alt="" style="position: absolute;display: none;">
+        
+        <!-- 敌方飞机 -->
+        <img id="dj0" src="./images/dj1.png" style="position:absolute;display:none;" alt="">
+        <img id="dj1" src="./images/dj2.png" style="position:absolute;display:none;" alt="">
+        <img id="dj2" src="./images/dj3.png" style="position:absolute;display:none;" alt="">
+        <img id="dj3" src="./images/dj1.png" style="position:absolute;display:none;" alt="">
+        <img id="dj4" src="./images/dj2.png" style="position:absolute;display:none;" alt="">
+        <img id="dj5" src="./images/dj3.png" style="position:absolute;display:none;" alt="">
+        
+        <div class="show">
+            <span class="score">分数</span><span class="num">0</span>
+            生命值:<span class="ming"></span>
+        </div>
+
+    </div>
+
+    <script>
+        var wrap = document.getElementsByClassName('wrap')[0];
+        var bgy = -380 * 2; //地图的初始位置
+        var plane = document.getElementById('fj');
+        var step = 5;
+        var timer = null;
+        var bzs = new Array(); // 定义一个爆炸数组
+        var score = 0; // 游戏分数
+        var ming = 3; // 我方飞机生命
+
+        document.getElementsByClassName('ming')[0].innerHTML = ming;
+        // 背景移动
+        setInterval(function() {
+            if(bgy >= 0) {
+                bgy = -380 * 2;
+            } else {
+                // 否则
+                bgy += 2;  // bgy = bgy +2;
+            }
+            wrap.style.backgroundPosition = '0 ' + bgy + 'px';
+        },20);
+
+        // 我方飞机移动
+        document.onkeydown = function(e) {
+            // console.log(e.keyCode); // 65 A
+
+            switch (e.keyCode) {
+                //左
+                case 65:
+
+                    // if (plane.offsetLeft <= 5) {
+                    //     plane.style.left = '5px';
+                    // } else {
+                    //     plane.style.left = (plane.offsetLeft-5) + 'px';
+                    // }
+
+                    // 可以返回最大的那个数
+                    clearInterval(timer);
+                    timer = setInterval(function() {
+                        plane.style.left = Math.max(5, (plane.offsetLeft - step)) + 'px';
+                    }, 20);
+                    break;
+                    //右
+                case 68:
+                clearInterval(timer);
+                timer = setInterval(function() {
+                    plane.style.left = Math.min(462, (plane.offsetLeft + step)) + 'px';
+                }, 20);
+                    break;
+                case 87:
+                clearInterval(timer);
+                timer = setInterval(function() {
+                    plane.style.top = Math.max(5, (plane.offsetTop - step)) + 'px';
+                }, 20);
+                    break;
+                case 83:
+                clearInterval(timer);
+                timer = setInterval(function() {
+                    plane.style.top = Math.min(500, (plane.offsetTop + step)) + 'px';
+                }, 20);
+                    break;
+                //空格
+                case 32:
+                    // 获取我方飞机的位置
+                    var x = parseInt(plane.style.left) + plane.offsetWidth / 2; 
+                    var y = parseInt(plane.style.top);
+
+                    doFire(x, y);
+                    console.log('bbiubiubiu 凹凸曼打小怪兽');
+                    break;
+            }
+        }
+        
+        // 按键抬起
+        document.onkeyup = function(e) {
+
+            // 用户按下的不是空格的时候才清定时器
+            if(e.keyCode != 32) {
+                clearInterval(timer);
+            }
+        }
+
+        function doFire(x, y) {
+            for(var i = 0; i < 8; i++) {
+                // 获取炮弹对象
+                var shell = document.getElementById('shell' + i);
+                
+                if (shell.style.display == 'none') {
+                    shell.style.left = x +'px';
+                    shell.style.top = y + 'px';
+                    shell.style.display = 'block';
+
+                    return;
+                }
+            }
+        }
+   
+        // 飞行动作处理函数
+        function run() {
+            // 循环所有子弹
+            for(var i = 0; i < 8; i++) {
+                // 获取子弹对象
+                var shell = document.getElementById('shell' + i);
+
+                // 判断
+                if (shell.style.display == 'block') {
+                    shell.style.top = (shell.offsetTop - step) + 'px';
+                    
+                    // 这里进行子弹与敌机的碰撞检测
+                    check(shell);// 将子弹对象传入
+                    // 判断子弹是否飞出了边界
+                    if (shell.offsetTop < 10) {
+                        shell.style.display = 'none';
+                    }
+                
+                }
+            }
+
+            // 循环所有敌机
+            for(var i = 0; i < 6; i++) {
+                // 获取对象
+                var dj = document.getElementById('dj' + i);
+
+                // 判断状态
+                if (dj.style.display == 'block') {
+                    dj.style.top = (dj.offsetTop + step) + 'px';
+                    // 敌机碰撞检测
+                    check2(dj);
+                    // 判断是否飞出了边界
+                    if (dj.offsetTop > 450) {
+                        dj.style.display = 'none';
+                    }
+                }
+            }
+            
+            // 循环所有爆炸
+            for (var i = 0; i < bzs.length; i++) {
+                bzs[i].num++;
+                if (bzs[i].num > 9) {
+                    bzs[i].style.display = 'none';
+                    //从数组中删除
+                    bzs.slice(i);
+                }
+            }
+            // 一次性定时器 
+            setTimeout(run, 30);
+        }
+        // 敌机出现
+        function djshow() {
+            // 设定一个0-5之间的随机数
+            var i = Math.floor(Math.random() * 1000 % 6);
+
+            // 获取敌机对象
+            var dj = document.getElementById('dj' + i);
+
+            // 判断
+            if (dj.style.display == 'none') {
+                dj.style.top = '10px';
+                dj.style.left = Math.floor(Math.random() * 1000 % 400) + 'px';
+                dj.style.display = 'block';
+            }
+          
+         setTimeout(djshow, 1000);
+        }
+        
+        // 碰撞检测
+        function check(shell) {
+
+            // 循环所有的敌机
+            for (var i = 0; i < 6; i++) {
+
+                var dj = document.getElementById('dj' + i);
+
+                if (dj.style.display == 'block') {
+
+                    // 获取敌方飞机的实时坐标
+                    var djx = dj.offsetLeft;
+                    var djy = dj.offsetTop;
+                    
+                    // 获取子弹的实时坐标
+                    var shellx = shell.offsetLeft;
+                    var shelly = shell.offsetTop;
+
+                    // 判断
+                    if (shelly < (djy + dj.offsetHeight) && shellx > djx && shellx <= djx + 100 -5) {
+                        
+                        // 发生碰撞则计算分数
+                        switch(i) {
+                            case 0:
+                            case 3:
+                                score += 3000;
+                                break;
+                            case 1:
+                            case 4:
+                                score += 10000;
+                                break;
+                            case 2:
+                            case 5:
+                                score += 5000;
+                                break;
+                        }
+
+                        // 将分数显示
+                        document.getElementsByClassName('num')[0].innerHTML = score;
+                        
+                        // 发生碰撞之后飞机和子弹都消失
+                        dj.style.display = 'none';
+                        shell.style.display = 'none';
+
+                        // 碰撞的时候发生爆炸效果
+                        var bz = document.createElement('img');
+                        bz.src = './images/bz.gif';
+                        bz.style.position = 'absolute';
+                        bz.style.left = shellx - 200 + 'px';
+                        bz.style.top = shelly  - 200 + 'px';
+                        bz.num = 0;
+                        // 将爆炸压入数组
+                        bzs.push(bz);
+                        //向wrap中追加子节点
+                        wrap.appendChild(bz);
+
+                       
+                    }
+                
+                }
+            }
+        }
+        
+        // 敌机与我方飞机碰撞检测
+        //飞机与飞机之间的碰撞检测
+    function check2(dj) {
+
+//循环敌方飞机对象
+
+for (var i = 0; i < 6; i++) {
+
+    //获取我方飞机对象
+    var plane = document.getElementById('fj');
+
+    //判断
+    if (dj.style.display == 'block') {
+
+        var djx = dj.offsetLeft;//敌机衡向位置
+        var djy = dj.offsetTop;//敌机纵向位置
+        var planex = plane.offsetLeft;//我方飞机横向位置
+        var planey = plane.offsetTop;//我方飞机纵向位置
+
+        //判断
+        if (planey < (djy + dj.offsetHeight) && planex > djx && planex < (djx + dj.offsetWidth)) {
+
+            switch(i) {
+                            case 0:
+                            case 3:
+                                score += 3000;
+                                break;
+                            case 1:
+                            case 4:
+                                score += 10000;
+                                break;
+                            case 2:
+                            case 5:
+                                score += 5000;
+                                break;
+                        }
+                        document.getElementsByClassName('num')[0].innerHTML = score;
+                        ming--;
+                        document.getElementsByClassName('ming')[0].innerHTML = ming;
+                        //让发生碰撞的敌方飞机和我方飞机同时消失
+            dj.style.display = 'none';
+            plane.style.display = 'none';
+
+
+            //华丽的爆炸效果出现
+            var bz = document.createElement('img');
+            bz.src = './images/bz.gif';
+            bz.style.position = 'absolute';
+            bz.style.left = planex - 200 + 'px';
+            bz.style.top = planey - 200 + 'px';
+            bz.num = 0;
+            bzs.push(bz);
+            wrap.appendChild(bz);
+
+            
+                        if (ming == 0) {
+                            document.body.style.backgroundColor = 'rgba(100,100,100,.5)';
+                            setTimeout(function() {
+                                if (confirm('game over! 续命一次? 取消重新开始')) {
+                                ming = 1;
+                             document.getElementsByClassName('ming')[0].innerHTML = ming;
+
+                            document.body.style.backgroundColor = '#FFF';
+
+                                } else {
+                                    // 重新加载
+                                    document.location.reload();
+                                }
+                            }, 100);
+                            
+                        }
+
+            //飞机复活
+            setTimeout(function () {
+                plane.style.left = 200 + 'px';
+                plane.style.top = 400 + 'px';
+                plane.style.display = 'block';
+            }, 1000);
+
+
+        }
+
+    }
+}
+
+
+}
+        run();
+        djshow();
+
+     
+   </script>
+</body>
+</html>
